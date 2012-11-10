@@ -20,24 +20,36 @@
 #include <stdio.h>
 #include <fetch.h>
 
-#define STATUSURL "http://status.raumzeitlabor.de/api/full.json"
+#define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
+#define COSMURL		"http://api.cosm.com/v2/feeds/42055.json?key=%s"
 
 struct model {
+	/* status */
 	bool door;
 	int devices;
 	int present;
 	time_t time;
 	char **presentnames;
+	/* cosm */
+	int members;
+	double balance;
+	double temperature;
+	double drain;
+	double latency;
+	double download;
+	double upload;
 };
 
 void		 usage(void);
 FILE		*fetch(const char *url);
-struct model	*parse_model(FILE *status);
+struct model	*parse_model(FILE *status, FILE *cosm);
 void		 free_model(struct model *model);
 void		 init_curses(void);
 void		 deinit_curses(void);
 void		 display(struct model *model);
 int		 namecmp(const void *name1, const void *name2);
+void		 parse_model_status(struct model *model, FILE *status);
+void		 parse_model_cosm(struct model *model, FILE *cosm);
 
 int
 main(int argc, char *argv[])
@@ -50,6 +62,15 @@ main(int argc, char *argv[])
 		}
 	}
 
+	char *cosmkey = getenv("RZLCOSMKEY");
+	if (cosmkey == NULL) {
+		fprintf(stderr,
+		    "Environemnt variable RZLCOSMKEY is not set.\n");
+		exit(EXIT_FAILURE);
+	}
+	char *cosmurl;
+	asprintf(&cosmurl, COSMURL, cosmkey);
+
 	init_curses();
 	atexit(&deinit_curses);
 
@@ -57,15 +78,21 @@ main(int argc, char *argv[])
 		FILE *status = fetch(STATUSURL);
 		assert(status != NULL);
 
-		struct model *model = parse_model(status);
+		FILE *cosm = fetch(cosmurl);
+		assert(cosm != NULL);
+
+		struct model *model = parse_model(status, cosm);
 		assert(model != NULL);
 
 		display(model);
 
+		fclose(cosm);
 		fclose(status);
 		free_model(model);
 
 	} while (getch() != 'q');
+
+	free(cosmurl);
 
 	return (0);
 }
@@ -99,6 +126,40 @@ display(struct model *model)
 	mvaddstr(4, 0, "Present: ");
 	attron(A_BOLD);
 	printw("%d", model->present);
+	attrset(A_NORMAL);
+
+	mvaddstr(2, 20, "Members: ");
+	attron(A_BOLD);
+	printw("%d", model->members);
+	attrset(A_NORMAL);
+
+	mvaddstr(3, 20, "Balance: ");
+	attron(A_BOLD);
+	printw("%.2f ", model->balance);
+	attrset(A_NORMAL);
+
+	mvaddstr(4, 20, "Temp:    ");
+	attron(A_BOLD);
+	printw("%.1f ", model->temperature);
+	attrset(A_NORMAL);
+
+	mvaddstr(2, 40, "Drain:   ");
+	attron(A_BOLD);
+	printw("%.0f", model->drain);
+	attrset(A_NORMAL);
+
+	mvaddstr(3, 40, "Latency: ");
+	attron(A_BOLD);
+	printw("%.3f", model->latency);
+	attrset(A_NORMAL);
+
+	mvaddstr(4, 40, "Up/Down: ");
+	attron(A_BOLD);
+	printw("%.0f", model->upload);
+	attrset(A_NORMAL);
+	addstr("/");
+	attron(A_BOLD);
+	printw("%.0f", model->download);
 	attrset(A_NORMAL);
 
 	int x = 0;
@@ -142,10 +203,29 @@ deinit_curses(void)
 }
 
 struct model *
-parse_model(FILE *status)
+parse_model(FILE *status, FILE *cosm)
 {
 	assert(status != NULL);
+	assert(cosm != NULL);
 
+	struct model *model = malloc(sizeof(struct model));
+	if (model == NULL) {
+		fprintf(stderr, "Could not allocate memory for model: %s\n",
+		    strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	model->time = time(NULL);
+
+	parse_model_status(model, status);
+	parse_model_cosm(model, cosm);
+
+	return (model);
+}
+
+void
+parse_model_status(struct model *model, FILE *status)
+{
 	json_error_t error;
 	json_t *json = json_loadf(status, 0, &error);
 	if (json == NULL) {
@@ -158,15 +238,6 @@ parse_model(FILE *status)
 		fprintf(stderr, "details is not an object\n");
 		exit(EXIT_FAILURE);
 	}
-
-	struct model *model = malloc(sizeof(struct model));
-	if (model == NULL) {
-		fprintf(stderr, "Could not allocate memory for model: %s\n",
-		    strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	model->time = time(NULL);
 
 	json_t *obj;
 	obj = json_object_get(details, "tuer");
@@ -211,8 +282,105 @@ parse_model(FILE *status)
 	qsort(model->presentnames, model->present, sizeof(char**), &namecmp);
 
 	json_decref(json);
+}
 
-	return (model);
+void
+parse_model_cosm(struct model *model, FILE *cosm)
+{
+	json_error_t error;
+	json_t *json = json_loadf(cosm, 0, &error);
+	if (json == NULL) {
+		fprintf(stderr, "Could not parse cosm: %s\n", error.text);
+		exit(EXIT_FAILURE);
+	}
+
+	json_t *datastreams = json_object_get(json, "datastreams");
+	if (!json_is_array(datastreams)) {
+		fprintf(stderr, "datastreams is not an array\n");
+		exit(EXIT_FAILURE);
+	}
+
+	for (size_t i = 0; i < json_array_size(datastreams); i++) {
+		json_t *stream = json_array_get(datastreams, i);
+		if (!json_is_object(stream)) {
+			fprintf(stderr, "stream is not an object\n");
+			exit(EXIT_FAILURE);
+		}
+
+		json_t *id = json_object_get(stream, "id");
+		if (!json_is_string(id)) {
+			fprintf(stderr, "id is not a string\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if (strcmp("Mitglieder", json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->members = (int)strtod(json_string_value(val),
+			    NULL);
+		}
+
+		if (strcmp("Kontostand", json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->balance = strtod(json_string_value(val), NULL);
+		}
+
+		if (strcmp("Temperatur_Raum_Beamerplattform",
+		    json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->temperature = strtod(json_string_value(val),
+			    NULL);
+		}
+
+		if (strcmp("Strom_Leistung", json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->drain = strtod(json_string_value(val), NULL);
+		}
+
+		if (strcmp("internet.latency", json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->latency = strtod(json_string_value(val), NULL);
+		}
+
+		if (strcmp("internet.upload", json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->upload = strtod(json_string_value(val), NULL);
+		}
+
+		if (strcmp("internet.download", json_string_value(id)) == 0) {
+			json_t *val = json_object_get(stream, "current_value");
+			if (!json_is_string(val)) {
+				fprintf(stderr, "value is not a string\n");
+				exit(EXIT_FAILURE);
+			}
+			model->download = strtod(json_string_value(val), NULL);
+		}
+	}
+
+	json_decref(json);
 }
 
 void
