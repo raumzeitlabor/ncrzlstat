@@ -4,6 +4,8 @@
  * you can do whatever you want with this stuff. If we meet some day, and you
  * think this stuff is worth it, you can buy me a beer in return.
  *                                                             Tobias Rehbein
+ *  Ported to Linux with curl instead of fetch by <don4221@gmail.com>
+ *  Marco "don" Kaulea
  */
 
 #include <assert.h>
@@ -18,7 +20,7 @@
 
 #include <sys/param.h>
 #include <stdio.h>
-#include <fetch.h>
+#include <curl/curl.h>
 
 #define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
 #define COSMURL		"http://api.cosm.com/v2/feeds/42055.json?key=%s"
@@ -42,14 +44,15 @@ struct model {
 
 void		 usage(void);
 FILE		*fetch(const char *url);
-struct model	*parse_model(FILE *status, FILE *cosm);
+char        *fetch_data_string(const char *url);
+struct model	*parse_model(char *status, char *cosm);
 void		 free_model(struct model *model);
 void		 init_curses(void);
 void		 deinit_curses(void);
 void		 display(struct model *model);
 int		 namecmp(const void *name1, const void *name2);
-void		 parse_model_status(struct model *model, FILE *status);
-void		 parse_model_cosm(struct model *model, FILE *cosm);
+void		 parse_model_status(struct model *model, char *status);
+void		 parse_model_cosm(struct model *model, char *cosm);
 
 int
 main(int argc, char *argv[])
@@ -65,7 +68,7 @@ main(int argc, char *argv[])
 	char *cosmkey = getenv("RZLCOSMKEY");
 	if (cosmkey == NULL) {
 		fprintf(stderr,
-		    "Environemnt variable RZLCOSMKEY is not set.\n");
+		    "Environment variable RZLCOSMKEY is not set.\n");
 		exit(EXIT_FAILURE);
 	}
 	char *cosmurl;
@@ -75,10 +78,10 @@ main(int argc, char *argv[])
 	atexit(&deinit_curses);
 
 	do {
-		FILE *status = fetch(STATUSURL);
+        char *status = fetch_data_string(STATUSURL);
 		assert(status != NULL);
 
-		FILE *cosm = fetch(cosmurl);
+        char *cosm = fetch_data_string(cosmurl);
 		assert(cosm != NULL);
 
 		struct model *model = parse_model(status, cosm);
@@ -86,8 +89,8 @@ main(int argc, char *argv[])
 
 		display(model);
 
-		fclose(cosm);
-		fclose(status);
+		free(cosm);
+		free(status);
 		free_model(model);
 
 	} while (getch() != 'q');
@@ -203,7 +206,7 @@ deinit_curses(void)
 }
 
 struct model *
-parse_model(FILE *status, FILE *cosm)
+parse_model(char *status, char *cosm)
 {
 	assert(status != NULL);
 	assert(cosm != NULL);
@@ -224,13 +227,14 @@ parse_model(FILE *status, FILE *cosm)
 }
 
 void
-parse_model_status(struct model *model, FILE *status)
+parse_model_status(struct model *model, char *status)
 {
 	json_error_t error;
-	json_t *json = json_loadf(status, 0, &error);
+	json_t *json = json_loads(status, 0, &error);
 	if (json == NULL) {
 		fprintf(stderr, "Could not parse status: %s\n", error.text);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, status);
+        exit(EXIT_FAILURE);
 	}
 
 	json_t *details = json_object_get(json, "details");
@@ -285,12 +289,13 @@ parse_model_status(struct model *model, FILE *status)
 }
 
 void
-parse_model_cosm(struct model *model, FILE *cosm)
+parse_model_cosm(struct model *model, char *cosm)
 {
 	json_error_t error;
-	json_t *json = json_loadf(cosm, 0, &error);
+	json_t *json = json_loads(cosm, 0, &error);
 	if (json == NULL) {
 		fprintf(stderr, "Could not parse cosm: %s\n", error.text);
+        fprintf(stderr, cosm);
 		exit(EXIT_FAILURE);
 	}
 
@@ -391,6 +396,7 @@ free_model(struct model *model)
 	for (int i = 0; i < model->present; i++) {
 		free(model->presentnames[i]);
 	}
+	free(model->presentnames);
 
 	free(model);
 }
@@ -399,7 +405,7 @@ FILE *
 fetch(const char *url)
 {
 	assert(url != NULL);
-
+/*
 	FILE *f = fetchGetURL(url, "");
 	if (f == NULL) {
 		fprintf(stderr, "Could not get URL \"%s\"\n", url);
@@ -407,12 +413,59 @@ fetch(const char *url)
 	}
 
 	return (f);
+*/
+    return NULL;
+}
+
+int
+curl_writer(char *data, size_t size, size_t nmemb,
+       char **buffer)
+{
+    int result = 0;
+
+    if (buffer != NULL)
+    {
+        //buffer->append(data,size * nmemb);
+        *buffer = realloc(*buffer, strlen(*buffer) + 1 + size * nmemb);
+        //char* tmp = malloc(size*nmemb+1);
+        //tmp[size*nmemb] = 0;
+        strncat(*buffer, data, size * nmemb);
+        result = size * nmemb;
+    }
+
+   return result;
+}
+
+char *
+fetch_data_string(const char *url)
+{
+    CURL *curl;
+    CURLcode result;
+
+    char* buffer = malloc(sizeof(char)*300);
+    buffer[0] = '\0';
+    //create curl handle
+    curl = curl_easy_init();
+    assert(curl != NULL);
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+
+    result = curl_easy_perform(curl);
+
+    curl_easy_cleanup;
+
+    char* ret = malloc(strlen(buffer)+1);
+    strcpy(ret, buffer);
+    free(buffer);
+    return ret;
 }
 
 void
 usage(void)
 {
-	fprintf(stderr, "%s has no options.\n", getprogname());
+	fprintf(stderr, "ncrzlstat has no options.\n");//getprogname());
 }
 
 int
