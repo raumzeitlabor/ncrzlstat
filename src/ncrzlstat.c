@@ -20,14 +20,14 @@
 #include <stdio.h>
 #include <fetch.h>
 
-#define URL "http://status.raumzeitlabor.de/api/full.json"
+#define STATUSURL "http://status.raumzeitlabor.de/api/full.json"
 
 struct model {
 	bool door;
 	int devices;
-	int members;
+	int present;
 	time_t time;
-	char **membernames;
+	char **presentnames;
 };
 
 void		 usage(void);
@@ -54,7 +54,7 @@ main(int argc, char *argv[])
 	atexit(&deinit_curses);
 
 	do {
-		FILE *status = fetch(URL);
+		FILE *status = fetch(STATUSURL);
 		assert(status != NULL);
 
 		struct model *model = parse_model(status);
@@ -98,22 +98,22 @@ display(struct model *model)
 
 	mvaddstr(4, 0, "Present: ");
 	attron(A_BOLD);
-	printw("%d", model->members);
+	printw("%d", model->present);
 	attrset(A_NORMAL);
 
-	int x = 20;
+	int x = 0;
 	size_t xoff = 0;
-	for (int i = 0; i < model->members; i++) {
-		int yoff = (i % (LINES - 2));
-		int y = yoff + 2;
+	for (int i = 0; i < model->present; i++) {
+		int yoff = (i % (LINES - 6));
+		int y = yoff + 6;
 		if (i > 0 && yoff == 0)
 			x += xoff + 2;
 
-		size_t namelen = strlen(model->membernames[i]);
+		size_t namelen = strlen(model->presentnames[i]);
 		if (xoff < namelen)
 			xoff = namelen;
 
-		mvprintw(y, x, "%s", model->membernames[i]);
+		mvprintw(y, x, "%s", model->presentnames[i]);
 	}
 
 	refresh();
@@ -188,27 +188,27 @@ parse_model(FILE *status)
 		fprintf(stderr, "laboranten is not an array\n");
 		exit(EXIT_FAILURE);
 	}
-	model->members = json_array_size(obj);
+	model->present = json_array_size(obj);
 
-	model->membernames = malloc(model->members * sizeof(char *));
-	if (model->membernames == NULL) {
-		fprintf(stderr, "Could not allocate membernames: %s\n",
+	model->presentnames = malloc(model->present * sizeof(char*));
+	if (model->presentnames == NULL) {
+		fprintf(stderr, "Could not allocate presentnames: %s\n",
 		    strerror(errno));
 	}
-	for (int i = 0; i < model->members; i++) {
+	for (int i = 0; i < model->present; i++) {
 		json_t *m = json_array_get(obj, i);
 		if (!json_is_string(m)) {
 			fprintf(stderr, "member is not a string\n");
 			exit(EXIT_FAILURE);
 		}
-		model->membernames[i] = strdup(json_string_value(m));
-		if (model->membernames[i] == NULL) {
+		model->presentnames[i] = strdup(json_string_value(m));
+		if (model->presentnames[i] == NULL) {
 			fprintf(stderr, "Could not strdup knownmember: %s\n",
 			    strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
-	qsort(model->membernames, model->members, sizeof(char**),  &namecmp);
+	qsort(model->presentnames, model->present, sizeof(char**), &namecmp);
 
 	json_decref(json);
 
@@ -220,8 +220,8 @@ free_model(struct model *model)
 {
 	assert(model != NULL);
 
-	for (int i = 0; i < model->members; i++) {
-		free(model->membernames[i]);
+	for (int i = 0; i < model->present; i++) {
+		free(model->presentnames[i]);
 	}
 
 	free(model);
