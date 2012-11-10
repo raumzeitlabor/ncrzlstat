@@ -65,7 +65,7 @@ main(int argc, char *argv[])
 	char *cosmkey = getenv("RZLCOSMKEY");
 	if (cosmkey == NULL) {
 		fprintf(stderr,
-		    "Environemnt variable RZLCOSMKEY is not set.\n");
+		    "Environment variable RZLCOSMKEY is not set.\n");
 		exit(EXIT_FAILURE);
 	}
 	char *cosmurl;
@@ -391,6 +391,7 @@ free_model(struct model *model)
 	for (int i = 0; i < model->present; i++) {
 		free(model->presentnames[i]);
 	}
+	free(model->presentnames);
 
 	free(model);
 }
