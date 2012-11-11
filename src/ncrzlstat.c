@@ -5,8 +5,8 @@
  * think this stuff is worth it, you can buy me a beer in return.
  *                                                             Tobias Rehbein
  *
- *  Ported to Linux with curl instead of fetch by <don4221@gmail.com>
- *  Marco "don" Kaulea
+ *  Ported to Linux with curl instead of fetch by <DonMarco42@gmail.com>
+ *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
 #include <assert.h>
