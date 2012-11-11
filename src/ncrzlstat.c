@@ -70,6 +70,10 @@ main(int argc, char *argv[])
 		switch (ch) {
 		case 'h':
 			usage();
+			exit(EXIT_SUCCESS);
+		default:
+			usage();
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -485,7 +489,7 @@ fetch_data_string(const char *url)
 void
 usage(void)
 {
-	fprintf(stderr, "ncrzlstat has no options.\n");
+	fprintf(stderr, "usage: ncrzlstat [-h]\n");
 }
 
 int
