@@ -29,6 +29,10 @@
 
 #define TIMEOUT		10000
 
+#define IPVANY		0x00
+#define IPV4ONLY	0x01
+#define IPV6ONLY	0x02
+
 struct model {
 	/* status */
 	bool door;
@@ -53,7 +57,7 @@ struct curl_write_buffer {
 };
 
 void		 usage(void);
-char		*fetch_data_string(const char *url);
+char		*fetch_data_string(const char *url, unsigned char ipresolve);
 struct model	*parse_model(char *status, char *cosm);
 void		 free_model(struct model *model);
 void		 init_curses(void);
@@ -68,9 +72,17 @@ int		 curl_writer(char *data, size_t size, size_t nmemb,
 int
 main(int argc, char *argv[])
 {
+	unsigned char ipresolve = IPVANY;
+
 	int ch;
-	while ((ch = getopt(argc, argv, "h")) != -1) {
+	while ((ch = getopt(argc, argv, "h46")) != -1) {
 		switch (ch) {
+		case '4':
+			ipresolve |= IPV4ONLY;
+			break;
+		case '6':
+			ipresolve |= IPV6ONLY;
+			break;
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
@@ -78,6 +90,11 @@ main(int argc, char *argv[])
 			usage();
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	if ((ipresolve & (IPV4ONLY | IPV6ONLY)) == (IPV4ONLY | IPV6ONLY)) {
+		usage();
+		exit(EXIT_FAILURE);
 	}
 
 	char *cosmkey = getenv("RZLCOSMKEY");
@@ -93,10 +110,10 @@ main(int argc, char *argv[])
 	atexit(&deinit_curses);
 
 	do {
-		char *status = fetch_data_string(STATUSURL);
+		char *status = fetch_data_string(STATUSURL, ipresolve);
 		assert(status != NULL);
 
-		char *cosm = fetch_data_string(cosmurl);
+		char *cosm = fetch_data_string(cosmurl, ipresolve);
 		assert(cosm != NULL);
 
 		struct model *model = parse_model(status, cosm);
@@ -463,9 +480,10 @@ curl_writer(char *data, size_t size, size_t nmemb,
 }
 
 char *
-fetch_data_string(const char *url)
+fetch_data_string(const char *url, unsigned char ipresolve)
 {
 	assert(url != NULL);
+	assert((ipresolve & (IPV4ONLY | IPV6ONLY)) != (IPV4ONLY | IPV6ONLY));
 
 	struct curl_write_buffer buffer = {
 		.malloced = 0,
@@ -482,6 +500,10 @@ fetch_data_string(const char *url)
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+	if (ipresolve & IPV4ONLY)
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+	if (ipresolve & IPV6ONLY)
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
 
 	CURLcode result = curl_easy_perform(curl);
 	if (result != 0) {
@@ -506,7 +528,7 @@ fetch_data_string(const char *url)
 void
 usage(void)
 {
-	fprintf(stderr, "usage: ncrzlstat [-h]\n");
+	fprintf(stderr, "usage: ncrzlstat [-h] [-4|-6]\n");
 }
 
 int
