@@ -250,8 +250,7 @@ parse_model_status(struct model *model, char *status)
 	json_t *json = json_loads(status, 0, &error);
 	if (json == NULL) {
 		fprintf(stderr, "Could not parse status: %s\n", error.text);
-		fprintf(stderr, status);
-        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	json_t *details = json_object_get(json, "details");
@@ -504,7 +503,7 @@ fetch_data_string(const char *url)
 void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-h]\n", getprogname());
+	fprintf(stderr, "usage: ncrzlstat [-h]\n");
 }
 
 int
