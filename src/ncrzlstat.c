@@ -43,8 +43,7 @@ struct model {
 };
 
 void		 usage(void);
-FILE		*fetch(const char *url);
-char        *fetch_data_string(const char *url);
+char		*fetch_data_string(const char *url);
 struct model	*parse_model(char *status, char *cosm);
 void		 free_model(struct model *model);
 void		 init_curses(void);
@@ -53,6 +52,7 @@ void		 display(struct model *model);
 int		 namecmp(const void *name1, const void *name2);
 void		 parse_model_status(struct model *model, char *status);
 void		 parse_model_cosm(struct model *model, char *cosm);
+int		 curl_writer(char *data, size_t size, size_t nmemb, char **buffer);
 
 int
 main(int argc, char *argv[])
@@ -78,10 +78,10 @@ main(int argc, char *argv[])
 	atexit(&deinit_curses);
 
 	do {
-        char *status = fetch_data_string(STATUSURL);
+		char *status = fetch_data_string(STATUSURL);
 		assert(status != NULL);
 
-        char *cosm = fetch_data_string(cosmurl);
+		char *cosm = fetch_data_string(cosmurl);
 		assert(cosm != NULL);
 
 		struct model *model = parse_model(status, cosm);
@@ -295,7 +295,6 @@ parse_model_cosm(struct model *model, char *cosm)
 	json_t *json = json_loads(cosm, 0, &error);
 	if (json == NULL) {
 		fprintf(stderr, "Could not parse cosm: %s\n", error.text);
-        fprintf(stderr, cosm);
 		exit(EXIT_FAILURE);
 	}
 
@@ -401,71 +400,49 @@ free_model(struct model *model)
 	free(model);
 }
 
-FILE *
-fetch(const char *url)
+int
+curl_writer(char *data, size_t size, size_t nmemb, char **buffer)
 {
-	assert(url != NULL);
-/*
-	FILE *f = fetchGetURL(url, "");
-	if (f == NULL) {
-		fprintf(stderr, "Could not get URL \"%s\"\n", url);
-		exit(EXIT_FAILURE);
+	int result = 0;
+
+	if (buffer != NULL)
+	{
+		*buffer = realloc(*buffer, strlen(*buffer) + 1 + size * nmemb);
+		strncat(*buffer, data, size * nmemb);
+		result = size * nmemb;
 	}
 
-	return (f);
-*/
-    return NULL;
-}
-
-int
-curl_writer(char *data, size_t size, size_t nmemb,
-       char **buffer)
-{
-    int result = 0;
-
-    if (buffer != NULL)
-    {
-        //buffer->append(data,size * nmemb);
-        *buffer = realloc(*buffer, strlen(*buffer) + 1 + size * nmemb);
-        //char* tmp = malloc(size*nmemb+1);
-        //tmp[size*nmemb] = 0;
-        strncat(*buffer, data, size * nmemb);
-        result = size * nmemb;
-    }
-
-   return result;
+	return (result);
 }
 
 char *
 fetch_data_string(const char *url)
 {
-    CURL *curl;
-    CURLcode result;
+	char *buffer = malloc(sizeof(char)*300);
+	buffer[0] = '\0';
+	//create curl handle
+	CURL *curl = curl_easy_init();
+	assert(curl != NULL);
 
-    char* buffer = malloc(sizeof(char)*300);
-    buffer[0] = '\0';
-    //create curl handle
-    curl = curl_easy_init();
-    assert(curl != NULL);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+	CURLcode result = curl_easy_perform(curl);
 
-    result = curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
 
-    curl_easy_cleanup;
-
-    char* ret = malloc(strlen(buffer)+1);
-    strcpy(ret, buffer);
-    free(buffer);
-    return ret;
+	char *ret = malloc(strlen(buffer)+1);
+	strcpy(ret, buffer);
+	free(buffer);
+	
+	return (ret);
 }
 
 void
 usage(void)
 {
-	fprintf(stderr, "ncrzlstat has no options.\n");//getprogname());
+	fprintf(stderr, "ncrzlstat has no options.\n");
 }
 
 int
