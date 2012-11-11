@@ -9,6 +9,8 @@
  *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
+#define _GNU_SOURCE
+
 #include <assert.h>
 #include <curses.h>
 #include <errno.h>
@@ -19,6 +21,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <curl/curl.h>
 
 #define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
