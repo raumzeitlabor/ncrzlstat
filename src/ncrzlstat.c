@@ -24,6 +24,8 @@
 #define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
 #define COSMURL		"http://api.cosm.com/v2/feeds/42055.json?key=%s"
 
+#define TIMEOUT		10000
+
 struct model {
 	/* status */
 	bool door;
@@ -195,7 +197,7 @@ init_curses(void)
 	initscr();
 	cbreak();
 	noecho();
-	timeout(10000);
+	timeout(TIMEOUT);
 
 	if (has_colors()) {
 		start_color();
