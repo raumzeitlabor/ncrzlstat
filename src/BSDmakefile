@@ -2,7 +2,7 @@ PROG=		ncrzlstat
 
 CFLAGS+=	-I/usr/local/include
 LDFLAGS+=	-L/usr/local/lib
-LDADD+=		-lfetch
+LDADD+=		-lcurl
 LDADD+=		-ljansson
 LDADD+=		-lncurses
 

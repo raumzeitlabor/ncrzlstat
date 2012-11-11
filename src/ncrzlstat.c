@@ -4,6 +4,9 @@
  * you can do whatever you want with this stuff. If we meet some day, and you
  * think this stuff is worth it, you can buy me a beer in return.
  *                                                             Tobias Rehbein
+ *
+ *  Ported to Linux with curl instead of fetch by <don4221@gmail.com>
+ *  Marco "don" Kaulea
  */
 
 #include <assert.h>
@@ -12,13 +15,11 @@
 #include <jansson.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <sys/param.h>
-#include <stdio.h>
-#include <fetch.h>
+#include <curl/curl.h>
 
 #define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
 #define COSMURL		"http://api.cosm.com/v2/feeds/42055.json?key=%s"
@@ -42,16 +43,24 @@ struct model {
 	double upload;
 };
 
+struct curl_write_buffer {
+	size_t malloced;
+	size_t used;
+	char *buffer;
+};
+
 void		 usage(void);
-FILE		*fetch(const char *url);
-struct model	*parse_model(FILE *status, FILE *cosm);
+char		*fetch_data_string(const char *url);
+struct model	*parse_model(char *status, char *cosm);
 void		 free_model(struct model *model);
 void		 init_curses(void);
 void		 deinit_curses(void);
 void		 display(struct model *model);
 int		 namecmp(const void *name1, const void *name2);
-void		 parse_model_status(struct model *model, FILE *status);
-void		 parse_model_cosm(struct model *model, FILE *cosm);
+void		 parse_model_status(struct model *model, char *status);
+void		 parse_model_cosm(struct model *model, char *cosm);
+int		 curl_writer(char *data, size_t size, size_t nmemb,
+		    struct curl_write_buffer *buffer);
 
 int
 main(int argc, char *argv[])
@@ -81,10 +90,10 @@ main(int argc, char *argv[])
 	atexit(&deinit_curses);
 
 	do {
-		FILE *status = fetch(STATUSURL);
+		char *status = fetch_data_string(STATUSURL);
 		assert(status != NULL);
 
-		FILE *cosm = fetch(cosmurl);
+		char *cosm = fetch_data_string(cosmurl);
 		assert(cosm != NULL);
 
 		struct model *model = parse_model(status, cosm);
@@ -92,8 +101,8 @@ main(int argc, char *argv[])
 
 		display(model);
 
-		fclose(cosm);
-		fclose(status);
+		free(cosm);
+		free(status);
 		free_model(model);
 
 	} while (getch() != 'q');
@@ -106,6 +115,8 @@ main(int argc, char *argv[])
 void
 display(struct model *model)
 {
+	assert(model != NULL);
+
 	clear();
 
 	attrset(A_NORMAL);
@@ -209,7 +220,7 @@ deinit_curses(void)
 }
 
 struct model *
-parse_model(FILE *status, FILE *cosm)
+parse_model(char *status, char *cosm)
 {
 	assert(status != NULL);
 	assert(cosm != NULL);
@@ -230,13 +241,17 @@ parse_model(FILE *status, FILE *cosm)
 }
 
 void
-parse_model_status(struct model *model, FILE *status)
+parse_model_status(struct model *model, char *status)
 {
+	assert(model != NULL);
+	assert(status != NULL);
+
 	json_error_t error;
-	json_t *json = json_loadf(status, 0, &error);
+	json_t *json = json_loads(status, 0, &error);
 	if (json == NULL) {
 		fprintf(stderr, "Could not parse status: %s\n", error.text);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, status);
+        exit(EXIT_FAILURE);
 	}
 
 	json_t *details = json_object_get(json, "details");
@@ -291,10 +306,13 @@ parse_model_status(struct model *model, FILE *status)
 }
 
 void
-parse_model_cosm(struct model *model, FILE *cosm)
+parse_model_cosm(struct model *model, char *cosm)
 {
+	assert(model != NULL);
+	assert(cosm != NULL);
+
 	json_error_t error;
-	json_t *json = json_loadf(cosm, 0, &error);
+	json_t *json = json_loads(cosm, 0, &error);
 	if (json == NULL) {
 		fprintf(stderr, "Could not parse cosm: %s\n", error.text);
 		exit(EXIT_FAILURE);
@@ -402,18 +420,85 @@ free_model(struct model *model)
 	free(model);
 }
 
-FILE *
-fetch(const char *url)
+int
+curl_writer(char *data, size_t size, size_t nmemb,
+    struct curl_write_buffer *buffer)
+{
+	assert(data != NULL);
+	assert(size > 0);
+	assert(nmemb > 0);
+	assert(buffer != NULL);
+
+	size_t total = size * nmemb;
+
+	if (buffer->malloced == 0) {
+		buffer->malloced = (total * 2) + 1;
+		buffer->buffer = malloc(buffer->malloced);
+		if (buffer->buffer == NULL) {
+			fprintf(stderr, "Could not malloc buffer: %s\n",
+			    strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (buffer->malloced < (buffer->used + total + 1)) {
+		buffer->malloced += (total * 2) + 1;
+		buffer->buffer = realloc(buffer->buffer, buffer->malloced);
+		if (buffer->buffer == NULL) {
+			fprintf(stderr, "Could not realloc buffer: %s\n",
+			    strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	assert(buffer != NULL);
+
+	memcpy(buffer->buffer + buffer->used, data, total);
+	buffer->used += total;
+	buffer->buffer[buffer->used] = '\0';
+
+	return (total);
+}
+
+char *
+fetch_data_string(const char *url)
 {
 	assert(url != NULL);
 
-	FILE *f = fetchGetURL(url, "");
-	if (f == NULL) {
-		fprintf(stderr, "Could not get URL \"%s\"\n", url);
+	struct curl_write_buffer buffer = {
+		.malloced = 0,
+		.used = 0,
+		.buffer = NULL,
+	};
+
+	CURL *curl = curl_easy_init();
+	if (curl == NULL) {
+		fprintf(stderr, "Could not initialize curl\n");
 		exit(EXIT_FAILURE);
 	}
 
-	return (f);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+
+	CURLcode result = curl_easy_perform(curl);
+	if (result != 0) {
+		fprintf(stderr, "Could not fetch URL: %s\n", url);
+		exit(EXIT_FAILURE);
+	}
+
+	curl_easy_cleanup(curl);
+
+	char *data = strdup(buffer.buffer);
+	if (data == NULL) {
+		fprintf(stderr, "Could not strdup buffer: %s\n",
+		    strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	free(buffer.buffer);
+
+	return (data);
 }
 
 void
@@ -425,6 +510,9 @@ usage(void)
 int
 namecmp(const void *name1, const void *name2)
 {
+	assert(name1 != NULL);
+	assert(name2 != NULL);
+
 	const char *c1 = *(char * const *)name1;
 	const char *c2 = *(char * const *)name2;
 
