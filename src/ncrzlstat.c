@@ -4,6 +4,7 @@
  * you can do whatever you want with this stuff. If we meet some day, and you
  * think this stuff is worth it, you can buy me a beer in return.
  *                                                             Tobias Rehbein
+ *
  *  Ported to Linux with curl instead of fetch by <don4221@gmail.com>
  *  Marco "don" Kaulea
  */
@@ -14,12 +15,10 @@
 #include <jansson.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <sys/param.h>
-#include <stdio.h>
 #include <curl/curl.h>
 
 #define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
