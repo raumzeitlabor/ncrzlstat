@@ -115,6 +115,8 @@ main(int argc, char *argv[])
 void
 display(struct model *model)
 {
+	assert(model != NULL);
+
 	clear();
 
 	attrset(A_NORMAL);
@@ -241,6 +243,9 @@ parse_model(char *status, char *cosm)
 void
 parse_model_status(struct model *model, char *status)
 {
+	assert(model != NULL);
+	assert(status != NULL);
+
 	json_error_t error;
 	json_t *json = json_loads(status, 0, &error);
 	if (json == NULL) {
@@ -303,6 +308,9 @@ parse_model_status(struct model *model, char *status)
 void
 parse_model_cosm(struct model *model, char *cosm)
 {
+	assert(model != NULL);
+	assert(cosm != NULL);
+
 	json_error_t error;
 	json_t *json = json_loads(cosm, 0, &error);
 	if (json == NULL) {
@@ -416,6 +424,11 @@ int
 curl_writer(char *data, size_t size, size_t nmemb,
     struct curl_write_buffer *buffer)
 {
+	assert(data != NULL);
+	assert(size > 0);
+	assert(nmemb > 0);
+	assert(buffer != NULL);
+
 	size_t total = size * nmemb;
 
 	if (buffer->malloced == 0) {
@@ -450,6 +463,8 @@ curl_writer(char *data, size_t size, size_t nmemb,
 char *
 fetch_data_string(const char *url)
 {
+	assert(url != NULL);
+
 	struct curl_write_buffer buffer = {
 		.malloced = 0,
 		.used = 0,
@@ -495,6 +510,9 @@ usage(void)
 int
 namecmp(const void *name1, const void *name2)
 {
+	assert(name1 != NULL);
+	assert(name2 != NULL);
+
 	const char *c1 = *(char * const *)name1;
 	const char *c2 = *(char * const *)name2;
 
