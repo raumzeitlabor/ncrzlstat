@@ -422,13 +422,20 @@ fetch_data_string(const char *url)
 	buffer[0] = '\0';
 	//create curl handle
 	CURL *curl = curl_easy_init();
-	assert(curl != NULL);
+	if (curl == NULL) {
+		fprintf(stderr, "Could not initialize curl\n");
+		exit(EXIT_FAILURE);
+	}
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
 	CURLcode result = curl_easy_perform(curl);
+	if (result != 0) {
+		fprintf(stderr, "Could not fetch URL: %s\n", url);
+		exit(EXIT_FAILURE);
+	}
 
 	curl_easy_cleanup(curl);
 
