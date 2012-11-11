@@ -42,6 +42,12 @@ struct model {
 	double upload;
 };
 
+struct curl_write_buffer {
+	size_t malloced;
+	size_t used;
+	char *buffer;
+};
+
 void		 usage(void);
 char		*fetch_data_string(const char *url);
 struct model	*parse_model(char *status, char *cosm);
@@ -52,7 +58,8 @@ void		 display(struct model *model);
 int		 namecmp(const void *name1, const void *name2);
 void		 parse_model_status(struct model *model, char *status);
 void		 parse_model_cosm(struct model *model, char *cosm);
-int		 curl_writer(char *data, size_t size, size_t nmemb, char **buffer);
+int		 curl_writer(char *data, size_t size, size_t nmemb,
+		    struct curl_write_buffer *buffer);
 
 int
 main(int argc, char *argv[])
@@ -401,26 +408,49 @@ free_model(struct model *model)
 }
 
 int
-curl_writer(char *data, size_t size, size_t nmemb, char **buffer)
+curl_writer(char *data, size_t size, size_t nmemb,
+    struct curl_write_buffer *buffer)
 {
-	int result = 0;
+	size_t total = size * nmemb;
 
-	if (buffer != NULL)
-	{
-		*buffer = realloc(*buffer, strlen(*buffer) + 1 + size * nmemb);
-		strncat(*buffer, data, size * nmemb);
-		result = size * nmemb;
+	if (buffer->malloced == 0) {
+		buffer->malloced = (total * 2) + 1;
+		buffer->buffer = malloc(buffer->malloced);
+		if (buffer->buffer == NULL) {
+			fprintf(stderr, "Could not malloc buffer: %s\n",
+			    strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 	}
 
-	return (result);
+	if (buffer->malloced < (buffer->used + total + 1)) {
+		buffer->malloced += (total * 2) + 1;
+		buffer->buffer = realloc(buffer->buffer, buffer->malloced);
+		if (buffer->buffer == NULL) {
+			fprintf(stderr, "Could not realloc buffer: %s\n",
+			    strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	assert(buffer != NULL);
+
+	memcpy(buffer->buffer + buffer->used, data, total);
+	buffer->used += total;
+	buffer->buffer[buffer->used] = '\0';
+
+	return (total);
 }
 
 char *
 fetch_data_string(const char *url)
 {
-	char *buffer = malloc(sizeof(char)*300);
-	buffer[0] = '\0';
-	//create curl handle
+	struct curl_write_buffer buffer = {
+		.malloced = 0,
+		.used = 0,
+		.buffer = NULL,
+	};
+
 	CURL *curl = curl_easy_init();
 	if (curl == NULL) {
 		fprintf(stderr, "Could not initialize curl\n");
@@ -439,11 +469,16 @@ fetch_data_string(const char *url)
 
 	curl_easy_cleanup(curl);
 
-	char *ret = malloc(strlen(buffer)+1);
-	strcpy(ret, buffer);
-	free(buffer);
-	
-	return (ret);
+	char *data = strdup(buffer.buffer);
+	if (data == NULL) {
+		fprintf(stderr, "Could not strdup buffer: %s\n",
+		    strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	free(buffer.buffer);
+
+	return (data);
 }
 
 void
