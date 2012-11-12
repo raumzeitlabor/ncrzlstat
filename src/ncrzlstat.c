@@ -29,9 +29,11 @@
 
 #define TIMEOUT		10000
 
-#define IPVANY		0x00
-#define IPV4ONLY	0x01
-#define IPV6ONLY	0x02
+enum ipversion {
+	IPVANY,
+	IPV4ONLY,
+	IPV6ONLY,
+};
 
 struct model {
 	/* status */
@@ -57,7 +59,7 @@ struct curl_write_buffer {
 };
 
 void		 usage(void);
-char		*fetch_data_string(const char *url, unsigned char ipresolve);
+char		*fetch_data_string(const char *url, enum ipversion ipresolve);
 struct model	*parse_model(char *status, char *cosm);
 void		 free_model(struct model *model);
 void		 init_curses(void);
@@ -72,16 +74,24 @@ int		 curl_writer(char *data, size_t size, size_t nmemb,
 int
 main(int argc, char *argv[])
 {
-	unsigned char ipresolve = IPVANY;
+	enum ipversion ipresolve = IPVANY;
 
 	int ch;
 	while ((ch = getopt(argc, argv, "h46")) != -1) {
 		switch (ch) {
 		case '4':
-			ipresolve |= IPV4ONLY;
+			if (ipresolve == IPV6ONLY) {
+				usage();
+				exit(EXIT_FAILURE);
+			}
+			ipresolve = IPV4ONLY;
 			break;
 		case '6':
-			ipresolve |= IPV6ONLY;
+			if (ipresolve == IPV4ONLY) {
+				usage();
+				exit(EXIT_FAILURE);
+			}
+			ipresolve = IPV6ONLY;
 			break;
 		case 'h':
 			usage();
@@ -90,11 +100,6 @@ main(int argc, char *argv[])
 			usage();
 			exit(EXIT_FAILURE);
 		}
-	}
-
-	if ((ipresolve & (IPV4ONLY | IPV6ONLY)) == (IPV4ONLY | IPV6ONLY)) {
-		usage();
-		exit(EXIT_FAILURE);
 	}
 
 	char *cosmkey = getenv("RZLCOSMKEY");
@@ -480,10 +485,9 @@ curl_writer(char *data, size_t size, size_t nmemb,
 }
 
 char *
-fetch_data_string(const char *url, unsigned char ipresolve)
+fetch_data_string(const char *url, enum ipversion ipresolve)
 {
 	assert(url != NULL);
-	assert((ipresolve & (IPV4ONLY | IPV6ONLY)) != (IPV4ONLY | IPV6ONLY));
 
 	struct curl_write_buffer buffer = {
 		.malloced = 0,
@@ -500,10 +504,19 @@ fetch_data_string(const char *url, unsigned char ipresolve)
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_writer);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
-	if (ipresolve & IPV4ONLY)
+
+	switch (ipresolve){
+	case (IPV4ONLY):
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-	if (ipresolve & IPV6ONLY)
+		break;
+	case (IPV6ONLY):
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+		break;
+	case (IPVANY):
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE,
+		    CURL_IPRESOLVE_WHATEVER);
+		break;
+	}
 
 	CURLcode result = curl_easy_perform(curl);
 	if (result != 0) {
