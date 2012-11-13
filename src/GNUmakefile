@@ -19,7 +19,7 @@ all:	$(BIN)
 $(BIN):	$(OBJ)
 	$(CC) $(LDFLAGS) $(LDADD) -o $@ $(OBJ)
 
-.o:	%.c
+%.o:	%.c
 	$(CC) $(CFLAGS) -c $<
 
 clean:
