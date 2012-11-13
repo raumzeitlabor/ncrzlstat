@@ -1,19 +1,26 @@
 CC= 		gcc
 CXX= 		g++
-CFLAGS+= 	-I/usr/include
+CFLAGS+= 	-I/usr/local/include
 CFLAGS+=	-std=c99
 CFLAGS+=	-g
-LDFLAGS+=	-L/usr/lib
+LDFLAGS+=	-L/usr/local/lib
 LDADD+=		-lcurl
 LDADD+=		-ljansson
 LDADD+=		-lncurses
 
-all:	ncrzlstat
+BIN=	ncrzlstat
+OBJ+=	ncrzlstat.o
+OBJ+=	fetch.o
+OBJ+=	parse.o
+OBJ+=	ui.o
 
-ncrzlstat.o:	ncrzlstat.c
-	$(CC) $(CFLAGS) -c ncrzlstat.c
+all:	$(BIN)
 
-ncrzlstat:	ncrzlstat.o
-	$(CC) $(LDFLAGS) $(LDADD) -o ncrzlstat ncrzlstat.o
+$(BIN):	$(OBJ)
+	$(CC) $(LDFLAGS) $(LDADD) -o $@ $(OBJ)
+
+.o:	%.c
+	$(CC) $(CFLAGS) -c $<
+
 clean:
-	rm *.o ncrzlstat
+	rm -f $(OBJ) $(BIN)
