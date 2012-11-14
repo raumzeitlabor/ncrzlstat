@@ -9,5 +9,5 @@
  *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
-void		 free_model(struct model *model);
-struct model	*parse_model(char *status, char *cosm);
+void		 parse_free_model(struct model *model);
+struct model	*parse_fill_model(char *status, char *cosm);

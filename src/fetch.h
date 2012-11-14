@@ -10,9 +10,9 @@
  */
 
 enum fetch_ipversion {
-	IPVANY,
-	IPV4ONLY,
-	IPV6ONLY,
+	FETCH_IPVANY,
+	FETCH_IPV4ONLY,
+	FETCH_IPV6ONLY,
 };
 
 char	*fetch_data_string(const char *_url, enum fetch_ipversion _ipresolve);

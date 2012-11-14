@@ -27,7 +27,7 @@ static void	parse_model_cosm(struct model *model, char *cosm);
 static void	parse_model_status(struct model *model, char *status);
 
 struct model *
-parse_model(char *status, char *cosm)
+parse_fill_model(char *status, char *cosm)
 {
 	assert(status != NULL);
 	assert(cosm != NULL);
@@ -48,7 +48,7 @@ parse_model(char *status, char *cosm)
 }
 
 void
-free_model(struct model *model)
+parse_free_model(struct model *model)
 {
 	assert(model != NULL);
 

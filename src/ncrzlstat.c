@@ -19,9 +19,9 @@
 #include <unistd.h>
 
 #include "ncrzlstat.h"
+#include "display.h"
 #include "fetch.h"
 #include "parse.h"
-#include "ui.h"
 
 #define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
 #define COSMURL		"http://api.cosm.com/v2/feeds/42055.json?key=%s"
@@ -31,24 +31,24 @@ void	usage(void);
 int
 main(int argc, char *argv[])
 {
-	enum fetch_ipversion ipresolve = IPVANY;
+	enum fetch_ipversion ipresolve = FETCH_IPVANY;
 
 	int ch;
 	while ((ch = getopt(argc, argv, "h46")) != -1) {
 		switch (ch) {
 		case '4':
-			if (ipresolve == IPV6ONLY) {
+			if (ipresolve == FETCH_IPV6ONLY) {
 				usage();
 				exit(EXIT_FAILURE);
 			}
-			ipresolve = IPV4ONLY;
+			ipresolve = FETCH_IPV4ONLY;
 			break;
 		case '6':
-			if (ipresolve == IPV4ONLY) {
+			if (ipresolve == FETCH_IPV4ONLY) {
 				usage();
 				exit(EXIT_FAILURE);
 			}
-			ipresolve = IPV6ONLY;
+			ipresolve = FETCH_IPV6ONLY;
 			break;
 		case 'h':
 			usage();
@@ -68,8 +68,8 @@ main(int argc, char *argv[])
 	char *cosmurl;
 	asprintf(&cosmurl, COSMURL, cosmkey);
 
-	init_curses();
-	atexit(&deinit_curses);
+	display_init();
+	atexit(&display_deinit);
 
 	bool loop = true;
 	while (loop) {
@@ -79,14 +79,14 @@ main(int argc, char *argv[])
 		char *cosm = fetch_data_string(cosmurl, ipresolve);
 		assert(cosm != NULL);
 
-		struct model *model = parse_model(status, cosm);
+		struct model *model = parse_fill_model(status, cosm);
 		assert(model != NULL);
 
 		ch = display(model);
 
 		free(cosm);
 		free(status);
-		free_model(model);
+		parse_free_model(model);
 
 		switch (ch) {
 		case 'q':

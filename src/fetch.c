@@ -51,13 +51,13 @@ fetch_data_string(const char *url, enum fetch_ipversion ipresolve)
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
 	switch (ipresolve){
-	case (IPV4ONLY):
+	case (FETCH_IPV4ONLY):
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 		break;
-	case (IPV6ONLY):
+	case (FETCH_IPV6ONLY):
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
 		break;
-	case (IPVANY):
+	case (FETCH_IPVANY):
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE,
 		    CURL_IPRESOLVE_WHATEVER);
 		break;

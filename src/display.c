@@ -17,7 +17,7 @@
 #include <time.h>
 
 #include "ncrzlstat.h"
-#include "ui.h"
+#include "display.h"
 
 #define TIMEOUT		10000
 
@@ -114,7 +114,7 @@ display(struct model *model)
 }
 
 void
-init_curses(void)
+display_init(void)
 {
 	initscr();
 	cbreak();
@@ -130,7 +130,7 @@ init_curses(void)
 }
 
 void
-deinit_curses(void)
+display_deinit(void)
 {
 	endwin();
 }

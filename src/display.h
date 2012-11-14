@@ -9,6 +9,6 @@
  *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
-void	deinit_curses(void);
 int	display(struct model *model);
-void	init_curses(void);
+void	display_deinit(void);
+void	display_init(void);
