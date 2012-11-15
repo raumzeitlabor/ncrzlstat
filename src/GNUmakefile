@@ -1,9 +1,9 @@
 CC= 		gcc
 CXX= 		g++
-CFLAGS+= 	-I/usr/local/include
+CFLAGS+= 	-I/usr/include
 CFLAGS+=	-std=c99
 CFLAGS+=	-g
-LDFLAGS+=	-L/usr/local/lib
+LDFLAGS+=	-L/usr/lib
 LDADD+=		-lcurl
 LDADD+=		-ljansson
 LDADD+=		-lncurses
