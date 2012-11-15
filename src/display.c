@@ -21,6 +21,23 @@
 
 #define TIMEOUT		10000
 
+#define PV_GENERIC(X, Y, LBL, FMT, VAL, UNIT)	do {			\
+	mvprintw((X), (Y), "%-10s", (LBL));				\
+	attron(A_BOLD);							\
+	printw((FMT), (VAL));						\
+	attrset(A_NORMAL);						\
+	addstr((UNIT));							\
+} while (0)
+
+#define PV_INTEGER(X, Y, LBL, VAL, UNIT)				\
+	PV_GENERIC((X), (Y), (LBL), "%4d    ", (VAL), (UNIT))
+
+#define PV_DOUBLE_2(X, Y, LBL, VAL, UNIT)				\
+	PV_GENERIC((X), (Y), (LBL), "%7.2f ", (VAL), (UNIT))
+
+#define PV_DOUBLE_0(X, Y, LBL, VAL, UNIT)				\
+	PV_GENERIC((X), (Y), (LBL), "%4.0f    ", (VAL), (UNIT))
+
 int
 display(struct model *model)
 {
@@ -42,64 +59,27 @@ display(struct model *model)
 	move(0, COLS - 24);
 	addstr(ctime(&(model->time)));
 
-	mvprintw(2, 0, "%-9s", "Members:");
-	attron(A_BOLD);
-	printw("%3d", model->members);
-	attrset(A_NORMAL);
+	PV_INTEGER(2, 0, "Members:", model->members, "");
+	PV_INTEGER(3, 0, "Present:", model->present, "");
+	PV_INTEGER(4, 0, "Devices:", model->devices, "");
 
-	mvprintw(3, 0, "%-9s", "Present:");
-	attron(A_BOLD);
-	printw("%3d", model->present);
-	attrset(A_NORMAL);
+	PV_DOUBLE_2(2, 19, "Balance:", model->balance, "EUR");
+	PV_DOUBLE_2(3, 19, "Temp:", model->temperature, "deg C");
+	PV_DOUBLE_2(4, 19, "Latency:", model->latency, "ms");
 
-	mvprintw(4, 0, "%-9s", "Devices:");
-	attron(A_BOLD);
-	printw("%3d", model->devices);
-	attrset(A_NORMAL);
-
-	mvprintw(2, 17, "%-13s",  "Balance:");
-	attron(A_BOLD);
-	printw("%7.2f ", model->balance);
-	attrset(A_NORMAL);
-	addstr("EUR");
-
-	mvprintw(3, 17, "%-13s", "Temperature:");
-	attron(A_BOLD);
-	printw("%7.2f ", model->temperature);
-	attrset(A_NORMAL);
-	addstr("deg C");
-
-	mvprintw(4, 17, "%-13s", "Latency:");
-	attron(A_BOLD);
-	printw("%7.2f ", model->latency);
-	attrset(A_NORMAL);
-	addstr("ms");
-
-	mvprintw(2, 48, "%-13s", "Power Drain:");
-	attron(A_BOLD);
-	printw("%4.0f ", model->drain);
-	attrset(A_NORMAL);
-	addstr("W");
-
-	mvprintw(3, 48, "%-13s", "Upload:");
-	attron(A_BOLD);
-	printw("%4.0f ", model->upload);
-	attrset(A_NORMAL);
-	addstr("kB/s");
-
-	mvprintw(4, 48, "%-13s", "Download:");
-	attron(A_BOLD);
-	printw("%4.0f ", model->download);
-	attrset(A_NORMAL);
-	addstr("kB/s");
+	PV_DOUBLE_0(2, 47, "Drain:", model->drain, "W");
+	PV_DOUBLE_0(3, 47, "Upload", model->upload, "kB/s");
+	PV_DOUBLE_0(4, 47, "Download:", model->download, "kB/s");
 
 	int x = 0;
 	size_t xoff = 0;
 	for (int i = 0; i < model->present; i++) {
 		int yoff = (i % (LINES - 6));
 		int y = yoff + 6;
-		if (i > 0 && yoff == 0)
-			x += xoff + 2;
+		if (i > 0 && yoff == 0) {
+			x += xoff + 5;
+			xoff = 0;
+		}
 
 		size_t namelen = strlen(model->presentnames[i]);
 		if (xoff < namelen)
