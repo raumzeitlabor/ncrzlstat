@@ -9,6 +9,8 @@
  *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
+#define _GNU_SOURCE
+
 #include <assert.h>
 #include <errno.h>
 #include <jansson.h>
@@ -19,8 +21,6 @@
 
 #include "ncrzlstat.h"
 #include "parse.h"
-
-#define _GNU_SOURCE
 
 static int	namecmp(const void *name1, const void *name2);
 static void	parse_model_cosm(struct model *model, char *cosm);
