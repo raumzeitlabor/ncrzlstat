@@ -22,6 +22,16 @@
 #include "ncrzlstat.h"
 #include "parse.h"
 
+#define FUNCTION(PART1, PART2, PARAM)	PART1##PART2(PARAM)
+
+#define CHECK_TYPE(OBJECT, TYPE, KEY)	do {				\
+	if (!FUNCTION(json_is_, TYPE, OBJECT)) {			\
+		fprintf(stderr,						\
+		    KEY " is not a object " #TYPE "\n");	\
+		exit(EXIT_FAILURE);					\
+	}								\
+} while (0)
+
 static int	namecmp(const void *name1, const void *name2);
 static void	parse_model_cosm(struct model *model, char *cosm);
 static void	parse_model_status(struct model *model, char *status);
@@ -74,31 +84,19 @@ parse_model_status(struct model *model, char *status)
 	}
 
 	json_t *details = json_object_get(json, "details");
-	if (!json_is_object(details)) {
-		fprintf(stderr, "details is not an object\n");
-		exit(EXIT_FAILURE);
-	}
+	CHECK_TYPE(details, object, "details");
 
 	json_t *obj;
 	obj = json_object_get(details, "tuer");
-	if (!json_is_string(obj)) {
-		fprintf(stderr, "tuer is not a string\n");
-		exit(EXIT_FAILURE);
-	}
+	CHECK_TYPE(obj, string, "tuer");
 	model->door = strcmp("1", json_string_value(obj)) == 0 ? true : false;
 
 	obj = json_object_get(details, "geraete");
-	if (!json_is_integer(obj)) {
-		fprintf(stderr, "geraete is not an integer\n");
-		exit(EXIT_FAILURE);
-	}
+	CHECK_TYPE(obj, integer, "geraete");
 	model->devices = json_integer_value(obj);
 
 	obj = json_object_get(details, "laboranten");
-	if (!json_is_array(obj)) {
-		fprintf(stderr, "laboranten is not an array\n");
-		exit(EXIT_FAILURE);
-	}
+	CHECK_TYPE(obj, array, "laboranten");
 	model->present = json_array_size(obj);
 
 	model->presentnames = malloc(model->present * sizeof(char*));
@@ -108,10 +106,7 @@ parse_model_status(struct model *model, char *status)
 	}
 	for (int i = 0; i < model->present; i++) {
 		json_t *m = json_array_get(obj, i);
-		if (!json_is_string(m)) {
-			fprintf(stderr, "member is not a string\n");
-			exit(EXIT_FAILURE);
-		}
+		CHECK_TYPE(m, string, "member");
 		model->presentnames[i] = strdup(json_string_value(m));
 		if (model->presentnames[i] == NULL) {
 			fprintf(stderr, "Could not strdup knownmember: %s\n",
@@ -138,87 +133,57 @@ parse_model_cosm(struct model *model, char *cosm)
 	}
 
 	json_t *datastreams = json_object_get(json, "datastreams");
-	if (!json_is_array(datastreams)) {
-		fprintf(stderr, "datastreams is not an array\n");
-		exit(EXIT_FAILURE);
-	}
+	CHECK_TYPE(datastreams, array, "datastreams");
 
 	for (size_t i = 0; i < json_array_size(datastreams); i++) {
 		json_t *stream = json_array_get(datastreams, i);
-		if (!json_is_object(stream)) {
-			fprintf(stderr, "stream is not an object\n");
-			exit(EXIT_FAILURE);
-		}
+		CHECK_TYPE(stream, object, "stream");
 
 		json_t *id = json_object_get(stream, "id");
-		if (!json_is_string(id)) {
-			fprintf(stderr, "id is not a string\n");
-			exit(EXIT_FAILURE);
-		}
+		CHECK_TYPE(id, string, "id");
 
 		if (strcmp("Mitglieder", json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "members");
 			model->members = (int)strtod(json_string_value(val),
 			    NULL);
 		}
 
 		if (strcmp("Kontostand", json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "balance");
 			model->balance = strtod(json_string_value(val), NULL);
 		}
 
 		if (strcmp("Temperatur_Raum_Beamerplattform",
 		    json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "temperature");
 			model->temperature = strtod(json_string_value(val),
 			    NULL);
 		}
 
 		if (strcmp("Strom_Leistung", json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "drain");
 			model->drain = strtod(json_string_value(val), NULL);
 		}
 
 		if (strcmp("internet.latency", json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "latency");
 			model->latency = strtod(json_string_value(val), NULL);
 		}
 
 		if (strcmp("internet.upload", json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "upload");
 			model->upload = strtod(json_string_value(val), NULL);
 		}
 
 		if (strcmp("internet.download", json_string_value(id)) == 0) {
 			json_t *val = json_object_get(stream, "current_value");
-			if (!json_is_string(val)) {
-				fprintf(stderr, "value is not a string\n");
-				exit(EXIT_FAILURE);
-			}
+			CHECK_TYPE(val, string, "download");
 			model->download = strtod(json_string_value(val), NULL);
 		}
 	}
