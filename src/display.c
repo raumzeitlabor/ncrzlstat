@@ -20,6 +20,7 @@
 #include "display.h"
 
 #define TIMEOUT		10000
+#define LIST_SPACING	5
 
 #define PV_GENERIC(X, Y, LBL, FMT, VAL, UNIT)	do {			\
 	mvprintw((X), (Y), "%-10s", (LBL));				\
@@ -37,6 +38,8 @@
 
 #define PV_DOUBLE_0(X, Y, LBL, VAL, UNIT)				\
 	PV_GENERIC((X), (Y), (LBL), "%4.0f    ", (VAL), (UNIT))
+
+static void list_present(int y, int x, struct model *model);
 
 int
 display(struct model *model)
@@ -71,22 +74,7 @@ display(struct model *model)
 	PV_DOUBLE_0(3, 47, "Upload", model->upload, "kB/s");
 	PV_DOUBLE_0(4, 47, "Download:", model->download, "kB/s");
 
-	int x = 0;
-	size_t xoff = 0;
-	for (int i = 0; i < model->present; i++) {
-		int yoff = (i % (LINES - 6));
-		int y = yoff + 6;
-		if (i > 0 && yoff == 0) {
-			x += xoff + 5;
-			xoff = 0;
-		}
-
-		size_t namelen = strlen(model->presentnames[i]);
-		if (xoff < namelen)
-			xoff = namelen;
-
-		mvprintw(y, x, "%s", model->presentnames[i]);
-	}
+	list_present(6, 0, model);
 
 	refresh();
 
@@ -115,4 +103,22 @@ display_deinit(void)
 	endwin();
 }
 
+static void
+list_present(int y, int x, struct model *model)
+{
+	size_t xoff = 0;
+	for (int i = 0; i < model->present; i++) {
+		int yoff = (i % (LINES - y));
+		int abs_y = yoff + y;
+		if (i > 0 && yoff == 0) {
+			x += xoff + LIST_SPACING;
+			xoff = 0;
+		}
 
+		size_t namelen = strlen(model->presentnames[i]);
+		if (xoff < namelen)
+			xoff = namelen;
+
+		mvprintw(abs_y, x, "%s", model->presentnames[i]);
+	}
+}
