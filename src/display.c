@@ -106,6 +106,10 @@ display_deinit(void)
 static void
 list_present(int y, int x, struct model *model)
 {
+	assert(y >= 0);
+	assert(x >= 0);
+	assert(model != NULL);
+
 	size_t xoff = 0;
 	for (int i = 0; i < model->present; i++) {
 		int yoff = (i % (LINES - y));
