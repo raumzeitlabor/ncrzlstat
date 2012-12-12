@@ -19,7 +19,7 @@
 #include "ncrzlstat.h"
 #include "display.h"
 
-#define TIMEOUT		10000
+#define TIMEOUT		REFRESH * 1000
 #define LIST_SPACING	5
 
 #define PV_GENERIC(X, Y, LBL, FMT, VAL, UNIT)	do {			\

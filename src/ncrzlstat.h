@@ -9,6 +9,8 @@
  *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
+#define REFRESH	10
+
 struct model {
 	/* status */
 	bool door;
