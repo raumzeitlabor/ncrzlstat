@@ -12,7 +12,7 @@ BIN=	ncrzlstat
 OBJ+=	ncrzlstat.o
 OBJ+=	fetch.o
 OBJ+=	parse.o
-OBJ+=	display.o
+OBJ+=	ui.o
 
 all:	$(BIN)
 

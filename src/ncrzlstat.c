@@ -20,7 +20,7 @@
 #include <unistd.h>
 
 #include "ncrzlstat.h"
-#include "display.h"
+#include "ui.h"
 #include "fetch.h"
 #include "parse.h"
 
@@ -69,8 +69,8 @@ main(int argc, char *argv[])
 	char *cosmurl;
 	asprintf(&cosmurl, COSMURL, cosmkey);
 
-	display_init();
-	atexit(&display_deinit);
+	ui_init();
+	atexit(&ui_deinit);
 
 	struct model *model = NULL;
 	time_t last = 0;
@@ -94,7 +94,7 @@ main(int argc, char *argv[])
 			free(status);
 		}
 
-		ch = display(model);
+		ch = ui_display(model);
 
 		switch (ch) {
 		case 'q':

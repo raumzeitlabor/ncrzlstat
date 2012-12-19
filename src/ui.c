@@ -17,7 +17,7 @@
 #include <time.h>
 
 #include "ncrzlstat.h"
-#include "display.h"
+#include "ui.h"
 
 #define TIMEOUT		REFRESH * 1000
 #define LIST_SPACING	5
@@ -42,7 +42,7 @@
 static void list_present(int y, int x, struct model *model);
 
 int
-display(struct model *model)
+ui_display(struct model *model)
 {
 	assert(model != NULL);
 
@@ -82,7 +82,7 @@ display(struct model *model)
 }
 
 void
-display_init(void)
+ui_init(void)
 {
 	initscr();
 	cbreak();
@@ -98,7 +98,7 @@ display_init(void)
 }
 
 void
-display_deinit(void)
+ui_deinit(void)
 {
 	endwin();
 }

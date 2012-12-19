@@ -3,7 +3,7 @@ PROG=		ncrzlstat
 SRCS+=		ncrzlstat.c
 SRCS+=		fetch.c
 SRCS+=		parse.c
-SRCS+=		display.c
+SRCS+=		ui.c
 
 CFLAGS+=	-I/usr/local/include
 LDFLAGS+=	-L/usr/local/lib
