@@ -41,7 +41,7 @@
 
 static void list_present(int y, int x, struct model *model);
 
-int
+void
 ui_display(struct model *model)
 {
 	assert(model != NULL);
@@ -77,8 +77,6 @@ ui_display(struct model *model)
 	list_present(6, 0, model);
 
 	refresh();
-
-	return getch();
 }
 
 void

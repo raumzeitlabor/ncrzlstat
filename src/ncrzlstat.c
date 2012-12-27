@@ -16,7 +16,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "ncrzlstat.h"
@@ -72,40 +71,21 @@ main(int argc, char *argv[])
 	ui_init();
 	atexit(&ui_deinit);
 
-	struct model *model = NULL;
-	time_t last = 0;
-	bool loop = true;
-	while (loop) {
-		if (last == 0 || last <= time(NULL) - REFRESH) {
-			last = time(NULL);
+	char *status = fetch_data_string(STATUSURL, ipresolve);
+	assert(status != NULL);
 
-			char *status = fetch_data_string(STATUSURL, ipresolve);
-			assert(status != NULL);
+	char *cosm = fetch_data_string(cosmurl, ipresolve);
+	assert(cosm != NULL);
 
-			char *cosm = fetch_data_string(cosmurl, ipresolve);
-			assert(cosm != NULL);
+	struct model *model = parse_fill_model(status, cosm);
+	assert(model != NULL);
 
-			if (model != NULL)
-				parse_free_model(model);
-			model = parse_fill_model(status, cosm);
-			assert(model != NULL);
+	free(cosm);
+	free(status);
 
-			free(cosm);
-			free(status);
-		}
+	ui_display(model);
 
-		ch = ui_display(model);
-
-		switch (ch) {
-		case 'q':
-		case 'Q':
-			loop = false;
-			break;
-		}
-	}
-
-	if (model != NULL)
-		parse_free_model(model);
+	parse_free_model(model);
 	free(cosmurl);
 
 	return (0);
