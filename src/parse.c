@@ -37,7 +37,7 @@ static void	parse_model_cosm(struct model *model, char *cosm);
 static void	parse_model_status(struct model *model, char *status);
 
 struct model *
-parse_fill_model(char *status, char *cosm)
+parse_fill_model(time_t time, char *status, char *cosm)
 {
 	assert(status != NULL);
 	assert(cosm != NULL);
@@ -49,7 +49,7 @@ parse_fill_model(char *status, char *cosm)
 		exit(EXIT_FAILURE);
 	}
 
-	model->time = time(NULL);
+	model->time = time;
 
 	parse_model_status(model, status);
 	parse_model_cosm(model, cosm);

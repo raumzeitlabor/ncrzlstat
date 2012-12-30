@@ -87,10 +87,9 @@ main(int argc, char *argv[])
 			if (refresh) {
 				refresh = false;
 
-				struct model *model = parse_fill_model(status,
-				    cosm);
+				struct model *model = parse_fill_model(last,
+				    status, cosm);
 				assert(model != NULL);
-				model->time = last;
 
 				ui_display(model);
 

@@ -10,4 +10,4 @@
  */
 
 void		 parse_free_model(struct model *model);
-struct model	*parse_fill_model(char *status, char *cosm);
+struct model	*parse_fill_model(time_t time, char *status, char *cosm);
