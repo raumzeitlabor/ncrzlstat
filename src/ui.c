@@ -105,6 +105,17 @@ enum ui_event
 ui_getevent(void)
 {
 	enum ui_event event;
+
+#ifdef OLDCURSES
+	/*
+	 * This doupdate() is a workaround for a bug in older ncurses
+	 * implementations (at least needed for vanilla ncurses 5.7). If the
+	 * display won't redraw itself correctly after the terminal has been
+	 * resized, try this workaround.
+	 */
+	doupdate();
+#endif
+
 	int ch = getch();
 
 	switch (ch) {

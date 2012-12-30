@@ -5,6 +5,7 @@ SRCS+=		fetch.c
 SRCS+=		parse.c
 SRCS+=		ui.c
 
+CFLAGS+=	-DOLDCURSES
 CFLAGS+=	-I/usr/local/include
 LDFLAGS+=	-L/usr/local/lib
 LDADD+=		-lcurl
