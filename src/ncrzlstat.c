@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "ncrzlstat.h"
@@ -71,21 +72,52 @@ main(int argc, char *argv[])
 	ui_init();
 	atexit(&ui_deinit);
 
-	char *status = fetch_data_string(STATUSURL, ipresolve);
-	assert(status != NULL);
+	enum ui_event event = UI_UNDEFINED;
+	while (event != UI_QUIT) {
+		char *status = fetch_data_string(STATUSURL, ipresolve);
+		assert(status != NULL);
 
-	char *cosm = fetch_data_string(cosmurl, ipresolve);
-	assert(cosm != NULL);
+		char *cosm = fetch_data_string(cosmurl, ipresolve);
+		assert(cosm != NULL);
 
-	struct model *model = parse_fill_model(status, cosm);
-	assert(model != NULL);
+		bool loop = true;
+		bool refresh = true;
+		time_t last = time(NULL);
+		while (loop) {
+			if (refresh) {
+				refresh = false;
 
-	free(cosm);
-	free(status);
+				struct model *model = parse_fill_model(status,
+				    cosm);
+				assert(model != NULL);
+				model->time = last;
 
-	ui_display(model);
+				ui_display(model);
 
-	parse_free_model(model);
+				parse_free_model(model);
+			}
+
+			event = ui_getevent();
+			switch (event) {
+			case UI_QUIT:
+				loop = false;
+				break;
+			case UI_RESIZE:
+				refresh = true;
+				break;
+			case UI_UNDEFINED:
+			default:
+				break;
+			}
+
+			if (last <= time(NULL) - REFRESH)
+				loop = false;
+		}
+
+		free(cosm);
+		free(status);
+	}
+
 	free(cosmurl);
 
 	return (0);

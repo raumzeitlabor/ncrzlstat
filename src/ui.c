@@ -19,7 +19,7 @@
 #include "ncrzlstat.h"
 #include "ui.h"
 
-#define TIMEOUT		REFRESH * 1000
+#define TIMEOUT		1000
 #define LIST_SPACING	5
 
 #define PV_GENERIC(X, Y, LBL, FMT, VAL, UNIT)	do {			\
@@ -99,6 +99,28 @@ void
 ui_deinit(void)
 {
 	endwin();
+}
+
+enum ui_event
+ui_getevent(void)
+{
+	enum ui_event event;
+	int ch = getch();
+
+	switch (ch) {
+	case 'q':
+	case 'Q':
+		event = UI_QUIT;
+		break;
+	case KEY_RESIZE:
+		event = UI_RESIZE;
+		break;
+	default:
+		event = UI_UNDEFINED;
+		break;
+	}
+
+	return (event);
 }
 
 static void
