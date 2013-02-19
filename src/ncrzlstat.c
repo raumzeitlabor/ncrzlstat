@@ -24,8 +24,8 @@
 #include "fetch.h"
 #include "parse.h"
 
-#define STATUSURL	"http://status.raumzeitlabor.de/api/full.json"
-#define COSMURL		"http://api.cosm.com/v2/feeds/42055.json?key=%s"
+#define STATUSURL	"https://status.raumzeitlabor.de/api/full.json"
+#define COSMURL		"https://api.cosm.com/v2/feeds/42055.json?key=%s"
 
 void	usage(void);
 
