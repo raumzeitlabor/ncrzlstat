@@ -67,6 +67,7 @@ parse_free_model(struct model *model)
 	}
 	free(model->presentnames);
 
+	free(model->devices);
 	free(model);
 }
 
@@ -92,8 +93,8 @@ parse_model_status(struct model *model, char *status)
 	model->door = strcmp("1", json_string_value(obj)) == 0 ? true : false;
 
 	obj = json_object_get(details, "geraete");
-	CHECK_TYPE(obj, integer, "geraete");
-	model->devices = json_integer_value(obj);
+	CHECK_TYPE(obj, string, "geraete");
+	model->devices = strdup(json_string_value(obj));
 
 	obj = json_object_get(details, "laboranten");
 	CHECK_TYPE(obj, array, "laboranten");

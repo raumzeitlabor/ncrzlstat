@@ -39,6 +39,9 @@
 #define PV_DOUBLE_0(X, Y, LBL, VAL, UNIT)				\
 	PV_GENERIC((X), (Y), (LBL), "%4.0f    ", (VAL), (UNIT))
 
+#define PV_STRING(X, Y, LBL, VAL, UNIT)				\
+	PV_GENERIC((X), (Y), (LBL), "%4s    ", (VAL), (UNIT))
+
 static void list_present(int y, int x, struct model *model);
 
 void
@@ -64,7 +67,7 @@ ui_display(struct model *model)
 
 	PV_INTEGER(2, 0, "Members:", model->members, "");
 	PV_INTEGER(3, 0, "Present:", model->present, "");
-	PV_INTEGER(4, 0, "Devices:", model->devices, "");
+	PV_STRING(4, 0, "Devices:", model->devices, "");
 
 	PV_DOUBLE_2(2, 19, "Balance:", model->balance, "EUR");
 	PV_DOUBLE_2(3, 19, "Temp:", model->temperature, "deg C");

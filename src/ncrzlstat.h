@@ -14,7 +14,7 @@
 struct model {
 	/* status */
 	bool door;
-	int devices;
+	char *devices;
 	int present;
 	time_t time;
 	char **presentnames;
