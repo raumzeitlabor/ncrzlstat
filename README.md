@@ -12,13 +12,13 @@ How does it work?
 
 This tool fetches information about the current state of the RaumZeitlabor from
 [status.raumzeitlabor.de](http://status.raumzeitlabor.de/) and
-[cosm](https://cosm.com/feeds/42055) and displays a set of selected values in a
+[xively](https://xively.com/feeds/42055) and displays a set of selected values in a
 ncurses based interface.
 
 Prerequisites
 -------------
 
-In order to fetch the cosm datafeed, you need a cosm API key. `ncrzlstat` reads
+In order to fetch the xively datafeed, you need a xively API key. `ncrzlstat` reads
 the environment variable `RZLCOSMKEY` to obtain this key.
 
 Dependencies
