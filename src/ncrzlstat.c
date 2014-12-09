@@ -61,13 +61,12 @@ main(int argc, char *argv[])
 	}
 
 	char *cosmkey = getenv("RZLCOSMKEY");
-	if (cosmkey == NULL) {
-		fprintf(stderr,
-		    "Environment variable RZLCOSMKEY is not set.\n");
-		exit(EXIT_FAILURE);
+	char *cosmurl = NULL;
+
+	if (cosmkey) {
+		asprintf(&cosmurl, COSMURL, cosmkey);
+		assert(cosmurl);
 	}
-	char *cosmurl;
-	asprintf(&cosmurl, COSMURL, cosmkey);
 
 	ui_init();
 	atexit(&ui_deinit);
@@ -77,8 +76,11 @@ main(int argc, char *argv[])
 		char *status = fetch_data_string(STATUSURL, ipresolve);
 		assert(status != NULL);
 
-		char *cosm = fetch_data_string(cosmurl, ipresolve);
-		assert(cosm != NULL);
+		char *cosm = NULL;
+		if (cosmurl) {
+			cosm = fetch_data_string(cosmurl, ipresolve);
+			assert(cosm != NULL);
+		}
 
 		bool loop = true;
 		bool refresh = true;
@@ -91,7 +93,7 @@ main(int argc, char *argv[])
 				    status, cosm);
 				assert(model != NULL);
 
-				ui_display(model);
+				ui_display(model, !!cosm);
 
 				parse_free_model(model);
 			}

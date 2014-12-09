@@ -40,7 +40,6 @@ struct model *
 parse_fill_model(time_t timestamp, char *status, char *cosm)
 {
 	assert(status != NULL);
-	assert(cosm != NULL);
 
 	struct model *model = malloc(sizeof(struct model));
 	if (model == NULL) {
@@ -52,7 +51,10 @@ parse_fill_model(time_t timestamp, char *status, char *cosm)
 	model->time = timestamp;
 
 	parse_model_status(model, status);
-	parse_model_cosm(model, cosm);
+
+	if (cosm) {
+		parse_model_cosm(model, cosm);
+	}
 
 	return (model);
 }

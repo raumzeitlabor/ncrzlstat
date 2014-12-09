@@ -15,6 +15,7 @@
 #include <curses.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "ncrzlstat.h"
 #include "ui.h"
@@ -45,7 +46,7 @@
 static void list_present(int y, int x, struct model *model);
 
 void
-ui_display(struct model *model)
+ui_display(struct model *model, bool have_cosm)
 {
 	assert(model != NULL);
 
@@ -78,6 +79,13 @@ ui_display(struct model *model)
 	PV_DOUBLE_0(4, 47, "Download:", model->download, "kB/s");
 
 	list_present(6, 0, model);
+
+	if(!have_cosm) {
+		mvaddstr(7 + model->present, 0,
+			"No Xively key set, can only display door state and present "
+			"members/devices.\nPlease set the RZLCOSMKEY environment variable "
+			"to your Xively API key to fix this.");
+	}
 
 	refresh();
 }

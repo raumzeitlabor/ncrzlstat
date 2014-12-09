@@ -9,13 +9,15 @@
  *  Marco "don" Kaulea. He prefers Single Malt Scotch.
  */
 
+#include <stdbool.h>
+
 enum ui_event {
 	UI_UNDEFINED = 0,
 	UI_QUIT,
 	UI_RESIZE,
 };
 
-void	ui_display(struct model *_model);
+void	ui_display(struct model *_model, bool have_cosm);
 void	ui_deinit(void);
 void	ui_init(void);
 enum ui_event	ui_getevent(void);
