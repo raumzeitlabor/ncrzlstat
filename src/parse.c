@@ -52,7 +52,7 @@ parse_fill_model(time_t timestamp, char *status, char *cosm)
 
 	parse_model_status(model, status);
 
-	if (cosm) {
+	if (cosm != NULL) {
 		parse_model_cosm(model, cosm);
 	}
 

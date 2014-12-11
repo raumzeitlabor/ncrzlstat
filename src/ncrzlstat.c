@@ -63,7 +63,7 @@ main(int argc, char *argv[])
 	char *cosmkey = getenv("RZLCOSMKEY");
 	char *cosmurl = NULL;
 
-	if (cosmkey) {
+	if (cosmkey != NULL) {
 		asprintf(&cosmurl, COSMURL, cosmkey);
 		assert(cosmurl);
 	}
@@ -77,7 +77,7 @@ main(int argc, char *argv[])
 		assert(status != NULL);
 
 		char *cosm = NULL;
-		if (cosmurl) {
+		if (cosmurl != NULL) {
 			cosm = fetch_data_string(cosmurl, ipresolve);
 			assert(cosm != NULL);
 		}
@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 				    status, cosm);
 				assert(model != NULL);
 
-				ui_display(model, !!cosm);
+				ui_display(model, cosm != NULL);
 
 				parse_free_model(model);
 			}
