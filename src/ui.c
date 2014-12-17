@@ -15,6 +15,7 @@
 #include <curses.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "ncrzlstat.h"
 #include "ui.h"
@@ -45,7 +46,7 @@
 static void list_present(int y, int x, struct model *model);
 
 void
-ui_display(struct model *model)
+ui_display(struct model *model, bool have_cosm)
 {
 	assert(model != NULL);
 
@@ -69,13 +70,24 @@ ui_display(struct model *model)
 	PV_INTEGER(3, 0, "Present:", model->present, "");
 	PV_STRING(4, 0, "Devices:", model->devices, "");
 
-	PV_DOUBLE_2(2, 19, "Balance:", model->balance, "EUR");
-	PV_DOUBLE_2(3, 19, "Temp:", model->temperature, "deg C");
-	PV_DOUBLE_2(4, 19, "Latency:", model->latency, "ms");
+	if (have_cosm) {
+		PV_DOUBLE_2(2, 19, "Balance:", model->balance, "EUR");
+		PV_DOUBLE_2(3, 19, "Temp:", model->temperature, "deg C");
+		PV_DOUBLE_2(4, 19, "Latency:", model->latency, "ms");
 
-	PV_DOUBLE_0(2, 47, "Drain:", model->drain, "W");
-	PV_DOUBLE_0(3, 47, "Upload", model->upload, "kB/s");
-	PV_DOUBLE_0(4, 47, "Download:", model->download, "kB/s");
+		PV_DOUBLE_0(2, 47, "Drain:", model->drain, "W");
+		PV_DOUBLE_0(3, 47, "Upload", model->upload, "kB/s");
+		PV_DOUBLE_0(4, 47, "Download:", model->download, "kB/s");
+	} else {
+		attron(COLOR_PAIR(2));
+		mvaddstr(2, 19,
+		    "No Xively key set, can only display door state and");
+		mvaddstr(3, 19,
+		    "present members/devices. Set the RZLCOSMKEY environment");
+		mvaddstr(4, 19,
+		    "variable to your Xively API key to fix this.");
+		attrset(A_NORMAL);
+	}
 
 	list_present(6, 0, model);
 

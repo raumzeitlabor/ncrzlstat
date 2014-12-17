@@ -61,22 +61,21 @@ main(int argc, char *argv[])
 	}
 
 	char *tsdbkey = getenv("TSDBCLOUDKEY");
-	if (tsdbkey == NULL) {
+	char *tsdburl = NULL;
+
+	if (tsdbkey != NULL) {
+	    asprintf(&tsdburl, TSDBURL, tsdbkey);
+		assert(tsdburl);
+    }else {
         tsdbkey = getenv("RZLCOSMKEY");
-        if (tsdbkey == NULL) {
-            fprintf(stderr,
-                "Environment variable TSDBCLOUDKEY is not set.\n");
-            exit(EXIT_FAILURE);
-        }else
-        {
+        if (tsdbkey != NULL) {
+	        asprintf(&tsdburl, TSDBURL, tsdbkey);
+		    assert(tsdburl);
 		    fprintf(stderr,
-		        "Environment variable RZLCOSMKEY is deprecated."
+                "Environment variable RZLCOSMKEY is deprecated."
                 "Use TSDBCLOUDKEY instead\n");
         }
-	}
-
-	char *tsdburl;
-	asprintf(&tsdburl, TSDBURL, tsdbkey);
+    }
 
 	ui_init();
 	atexit(&ui_deinit);
@@ -86,8 +85,11 @@ main(int argc, char *argv[])
 		char *status = fetch_data_string(STATUSURL, ipresolve);
 		assert(status != NULL);
 
-		char *tsdb = fetch_data_string(tsdburl, ipresolve);
-		assert(tsdb != NULL);
+		char *tsdb = NULL;
+		if (tsdburl != NULL) {
+            tsdb = fetch_data_string(tsdburl, ipresolve);
+            assert(tsdb != NULL);
+        }
 
 		bool loop = true;
 		bool refresh = true;
@@ -100,7 +102,7 @@ main(int argc, char *argv[])
 				    status, tsdb);
 				assert(model != NULL);
 
-				ui_display(model);
+				ui_display(model, tsdb != NULL);
 
 				parse_free_model(model);
 			}
