@@ -19,7 +19,7 @@ Prerequisites
 -------------
 
 In order to fetch the xively datafeed, you need a xively API key. `ncrzlstat` reads
-the environment variable `RZLCOSMKEY` to obtain this key.
+the environment variable `RZLTSDBCLOUDKEY` to obtain this key.
 
 Dependencies
 ------------
