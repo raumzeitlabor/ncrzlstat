@@ -18,7 +18,7 @@ struct model {
 	int present;
 	time_t time;
 	char **presentnames;
-	/* tsdb */
+	/* cosm */
 	int members;
 	double balance;
 	double temperature;

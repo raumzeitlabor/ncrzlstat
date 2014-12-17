@@ -25,7 +25,7 @@
 #include "parse.h"
 
 #define STATUSURL	"https://status.raumzeitlabor.de/api/full.json"
-#define TSDBURL		"https://api.xively.com/v2/feeds/42055.json?key=%s"
+#define COSMURL		"https://api.xively.com/v2/feeds/42055.json?key=%s"
 
 void	usage(void);
 
@@ -60,22 +60,13 @@ main(int argc, char *argv[])
 		}
 	}
 
-	char *tsdbkey = getenv("TSDBCLOUDKEY");
-	char *tsdburl = NULL;
+	char *cosmkey = getenv("RZLCOSMKEY");
+	char *cosmurl = NULL;
 
-	if (tsdbkey != NULL) {
-	    asprintf(&tsdburl, TSDBURL, tsdbkey);
-		assert(tsdburl);
-    }else {
-        tsdbkey = getenv("RZLCOSMKEY");
-        if (tsdbkey != NULL) {
-	        asprintf(&tsdburl, TSDBURL, tsdbkey);
-		    assert(tsdburl);
-		    fprintf(stderr,
-                "Environment variable RZLCOSMKEY is deprecated."
-                "Use TSDBCLOUDKEY instead\n");
-        }
-    }
+	if (cosmkey != NULL) {
+		asprintf(&cosmurl, COSMURL, cosmkey);
+		assert(cosmurl);
+	}
 
 	ui_init();
 	atexit(&ui_deinit);
@@ -85,11 +76,11 @@ main(int argc, char *argv[])
 		char *status = fetch_data_string(STATUSURL, ipresolve);
 		assert(status != NULL);
 
-		char *tsdb = NULL;
-		if (tsdburl != NULL) {
-            tsdb = fetch_data_string(tsdburl, ipresolve);
-            assert(tsdb != NULL);
-        }
+		char *cosm = NULL;
+		if (cosmurl != NULL) {
+			cosm = fetch_data_string(cosmurl, ipresolve);
+			assert(cosm != NULL);
+		}
 
 		bool loop = true;
 		bool refresh = true;
@@ -99,10 +90,10 @@ main(int argc, char *argv[])
 				refresh = false;
 
 				struct model *model = parse_fill_model(last,
-				    status, tsdb);
+				    status, cosm);
 				assert(model != NULL);
 
-				ui_display(model, tsdb != NULL);
+				ui_display(model, cosm != NULL);
 
 				parse_free_model(model);
 			}
@@ -124,11 +115,11 @@ main(int argc, char *argv[])
 				loop = false;
 		}
 
-		free(tsdb);
+		free(cosm);
 		free(status);
 	}
 
-	free(tsdburl);
+	free(cosmurl);
 
 	return (0);
 }
