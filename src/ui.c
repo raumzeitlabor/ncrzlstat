@@ -46,7 +46,7 @@
 static void list_present(int y, int x, struct model *model);
 
 void
-ui_display(struct model *model, bool have_cosm)
+ui_display(struct model *model, bool have_tsdb)
 {
 	assert(model != NULL);
 
@@ -70,7 +70,7 @@ ui_display(struct model *model, bool have_cosm)
 	PV_INTEGER(3, 0, "Present:", model->present, "");
 	PV_STRING(4, 0, "Devices:", model->devices, "");
 
-	if (have_cosm) {
+	if (have_tsdb) {
 		PV_DOUBLE_2(2, 19, "Balance:", model->balance, "EUR");
 		PV_DOUBLE_2(3, 19, "Temp:", model->temperature, "deg C");
 		PV_DOUBLE_2(4, 19, "Latency:", model->latency, "ms");
@@ -83,9 +83,9 @@ ui_display(struct model *model, bool have_cosm)
 		mvaddstr(2, 19,
 		    "No Xively key set, can only display door state and");
 		mvaddstr(3, 19,
-		    "present members/devices. Set the RZLCOSMKEY environment");
+		    "present members/devices. Set the RZLTSDBCLOUDKEY");
 		mvaddstr(4, 19,
-		    "variable to your Xively API key to fix this.");
+		    "environment variable to your Xively API key to fix this.");
 		attrset(A_NORMAL);
 	}
 

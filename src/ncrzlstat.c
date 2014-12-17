@@ -60,22 +60,22 @@ main(int argc, char *argv[])
 		}
 	}
 
-	char *tsdbkey = getenv("TSDBCLOUDKEY");
+	char *tsdbkey = getenv("RZLTSDBCLOUDKEY");
 	char *tsdburl = NULL;
 
 	if (tsdbkey != NULL) {
-	    asprintf(&tsdburl, TSDBURL, tsdbkey);
+		asprintf(&tsdburl, TSDBURL, tsdbkey);
 		assert(tsdburl);
-    }else {
-        tsdbkey = getenv("RZLCOSMKEY");
-        if (tsdbkey != NULL) {
-	        asprintf(&tsdburl, TSDBURL, tsdbkey);
-		    assert(tsdburl);
-		    fprintf(stderr,
-                "Environment variable RZLCOSMKEY is deprecated."
-                "Use TSDBCLOUDKEY instead\n");
-        }
-    }
+	}else {
+		tsdbkey = getenv("RZLCOSMKEY");
+		if (tsdbkey != NULL) {
+			asprintf(&tsdburl, TSDBURL, tsdbkey);
+			assert(tsdburl);
+			fprintf(stderr,
+			    "Environment variable RZLCOSMKEY is deprecated. "
+			    "Use RZLTSDBCLOUDKEY instead.\n");
+		}
+	}
 
 	ui_init();
 	atexit(&ui_deinit);
@@ -87,9 +87,9 @@ main(int argc, char *argv[])
 
 		char *tsdb = NULL;
 		if (tsdburl != NULL) {
-            tsdb = fetch_data_string(tsdburl, ipresolve);
-            assert(tsdb != NULL);
-        }
+			tsdb = fetch_data_string(tsdburl, ipresolve);
+			assert(tsdb != NULL);
+		}
 
 		bool loop = true;
 		bool refresh = true;

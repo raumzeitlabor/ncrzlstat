@@ -17,7 +17,7 @@ enum ui_event {
 	UI_RESIZE,
 };
 
-void	ui_display(struct model *_model, bool have_cosm);
+void	ui_display(struct model *_model, bool have_tsdb);
 void	ui_deinit(void);
 void	ui_init(void);
 enum ui_event	ui_getevent(void);

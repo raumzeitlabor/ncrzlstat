@@ -33,11 +33,11 @@
 } while (0)
 
 static int	namecmp(const void *name1, const void *name2);
-static void	parse_model_cosm(struct model *model, char *cosm);
+static void	parse_model_tsdb(struct model *model, char *tsdb);
 static void	parse_model_status(struct model *model, char *status);
 
 struct model *
-parse_fill_model(time_t timestamp, char *status, char *cosm)
+parse_fill_model(time_t timestamp, char *status, char *tsdb)
 {
 	assert(status != NULL);
 
@@ -52,8 +52,8 @@ parse_fill_model(time_t timestamp, char *status, char *cosm)
 
 	parse_model_status(model, status);
 
-	if (cosm != NULL) {
-		parse_model_cosm(model, cosm);
+	if (tsdb != NULL) {
+		parse_model_tsdb(model, tsdb);
 	}
 
 	return (model);
@@ -123,15 +123,15 @@ parse_model_status(struct model *model, char *status)
 }
 
 static void
-parse_model_cosm(struct model *model, char *cosm)
+parse_model_tsdb(struct model *model, char *tsdb)
 {
 	assert(model != NULL);
-	assert(cosm != NULL);
+	assert(tsdb != NULL);
 
 	json_error_t error;
-	json_t *json = json_loads(cosm, 0, &error);
+	json_t *json = json_loads(tsdb, 0, &error);
 	if (json == NULL) {
-		fprintf(stderr, "Could not parse cosm: %s\n", error.text);
+		fprintf(stderr, "Could not parse tsdb: %s\n", error.text);
 		exit(EXIT_FAILURE);
 	}
 
