@@ -61,20 +61,19 @@ main(int argc, char *argv[])
 	}
 
 	char *tsdbkey = getenv("RZLTSDBCLOUDKEY");
-	char *tsdburl = NULL;
-
-	if (tsdbkey != NULL) {
-		asprintf(&tsdburl, TSDBURL, tsdbkey);
-		assert(tsdburl);
-	}else {
+	if (tsdbkey == NULL) {
 		tsdbkey = getenv("RZLCOSMKEY");
 		if (tsdbkey != NULL) {
-			asprintf(&tsdburl, TSDBURL, tsdbkey);
-			assert(tsdburl);
 			fprintf(stderr,
 			    "Environment variable RZLCOSMKEY is deprecated. "
 			    "Use RZLTSDBCLOUDKEY instead.\n");
 		}
+	}
+
+	char *tsdburl = NULL;
+	if (tsdbkey != NULL) {
+		asprintf(&tsdburl, TSDBURL, tsdbkey);
+		assert(tsdburl);
 	}
 
 	ui_init();
