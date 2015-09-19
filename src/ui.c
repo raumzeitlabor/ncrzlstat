@@ -11,6 +11,10 @@
 
 #define _GNU_SOURCE
 
+#if defined(__sun) && defined(__SVR4)
+	#define __EXTENSIONS__
+#endif
+
 #include <assert.h>
 #include <curses.h>
 #include <string.h>
@@ -138,9 +142,11 @@ ui_getevent(void)
 	case 'Q':
 		event = UI_QUIT;
 		break;
+#if !(defined(__sun) && defined(__SVR4))
 	case KEY_RESIZE:
 		event = UI_RESIZE;
 		break;
+#endif
 	default:
 		event = UI_UNDEFINED;
 		break;

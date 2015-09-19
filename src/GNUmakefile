@@ -6,7 +6,14 @@ CFLAGS+=	-g
 LDFLAGS+=	-L/usr/lib
 LDADD+=		-lcurl
 LDADD+=		-ljansson
-LDADD+=		-lncurses
+
+ifeq ($(shell uname -s),SunOS)
+	CFLAGS+=	-I/opt/csw/include
+	LDFLAGS+=	-L/opt/csw/lib -R/opt/csw/lib
+	LDADD+=		-lcurses
+else
+	LDADD+=		-lncurses
+endif
 
 BIN=	ncrzlstat
 OBJ+=	ncrzlstat.o

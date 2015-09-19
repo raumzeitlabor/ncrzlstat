@@ -26,8 +26,9 @@ Dependencies
 
  * [Jansson](http://www.digip.org/jansson/), a C library for encoding, decoding
    and manipulating JSON data.
+   
+   On Solaris, Jansson is expected to be installed via OpenCSW (`libjansson_dev`).
  * [libcurl](http://curl.haxx.se/libcurl/), a free and easy-to-use client-side
    URL transfer library.
- * [ncurses](http://invisible-island.net/ncurses/ncurses.html), a free software
+ * Linux/BSD only: [ncurses](http://invisible-island.net/ncurses/ncurses.html), a free software
    emulation of curses in System V Release 4.0, and more.
-

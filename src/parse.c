@@ -11,6 +11,10 @@
 
 #define _GNU_SOURCE
 
+#if defined(__sun) && defined(__SVR4)
+	#define __EXTENSIONS__
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <jansson.h>
